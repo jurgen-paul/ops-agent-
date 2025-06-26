@@ -1,0 +1,35 @@
+from smolagents.local_python_executor import LocalPythonExecutor
+
+# Set up custom executor, authorize package "numpy"
+custom_executor = LocalPythonExecutor(["numpy"])
+
+# Utilisty for pretty printing errors
+def run_capture_exception(command: str):
+    try:
+        custom_executor(harmful_command)
+    except Exception as e:
+        print("ERROR:\n", e)
+
+# Undefined command just do not work
+harmful_command="!echo Bad command"
+run_capture_exception(harmful_command)
+# >>> ERROR: invalid syntax (<unknown>, line 1)
+
+
+# Imports like os will not be performed unless explicitly added to `additional_authorized_imports`
+harmful_command="import os; exit_code = os.system("echo Bad command")"
+run_capture_exception(harmful_command)
+# >>> ERROR: Code execution failed at line 'import os' due to: InterpreterError: Import of os is not allowed. Authorized imports are: ['statistics', 'numpy', 'itertools', 'time', 'queue', 'collections', 'math', 'random', 're', 'datetime', 'stat', 'unicodedata']
+
+# Even in authorized imports, potentially harmful packages will not be imported
+harmful_command="import random; random._os.system('echo Bad command')"
+run_capture_exception(harmful_command)
+# >>> ERROR: Code execution failed at line 'random._os.system('echo Bad command')' due to: InterpreterError: Forbidden access to module: os
+
+# Infinite loop are interrupted after N operations
+harmful_command="""
+while True:
+    pass
+"""
+run_capture_exception(harmful_command)
+# >>> ERROR: Code execution failed at line 'while True: pass' due to: InterpreterError: Maximum number of 1000000 iterations in While loop exceeded
