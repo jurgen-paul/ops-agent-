@@ -1,0 +1,135 @@
+from huggingface_hub import InferenceClient
+from e2b_code_interpreter import Sandbox
+import re
+
+# Not all models are capable of direct tools use - we need to extract the code block manually and prompting the LLM to generate the code.
+def match_code_block(llm_response):
+  pattern = re.compile(r'```python\n(.*?)\n```', re.DOTALL) # Match everything in between ```python and ```
+  match = pattern.search(llm_response)
+  if match:
+    code = match.group(1)
+    print(code)
+    return code
+  return ""
+
+
+system_prompt = """You are a helpful coding assistant that can execute python code in a Jupyter notebook. You are given tasks to complete and you run Python code to solve them.
+Generally, you follow these rules:
+- ALWAYS FORMAT YOUR RESPONSE IN MARKDOWN
+- ALWAYS RESPOND ONLY WITH CODE IN CODE BLOCK LIKE THIS:
+\`\`\`python
+{code}
+\`\`\`
+"""
+prompt = "Calculate how many r's are in the word 'strawberry.'"
+
+# Initialize the client
+client = InferenceClient(
+    provider="hf-inference",
+    api_key="HF_INFERENCE_API_KEY"
+)
+
+completion = client.chat.completions.create(
+    model="Qwen/Qwen3-235B-A22B", # Or use any other model from Hugging Face
+    messages=[
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": prompt},
+    ]
+)
+
+content = completion.choices[0].message.content
+code = match_code_block(content)
+
+with Sandbox() as sandbox:
+    execution = sandbox.run_code(code)
+    print(execution)
+
+
+import { Sandbox } from '@e2b/code-interpreter'
+
+// Read local file relative to the current working directory
+const content = fs.readFileSync('local/file')
+
+const sbx = await Sandbox.create()
+// Upload file to the sandbox to absolute path '/home/user/my-file'
+await sbx.files.write('/home/user/my-file', content)
+
+from e2b_code_interpreter import Sandbox
+
+sbx = Sandbox()
+
+# Read local file relative to the current working directory
+with open("local/file", "rb") as file:
+   # Upload file to the sandbox to absolute path '/home/user/my-file'
+	sbx.files.write("/home/user/my-file", file)
+
+import { Sandbox } from '@e2b/code-interpreter'
+
+// Read local file relative to the current working directory
+const fileA = fs.readFileSync('local/file/a')
+const fileB = fs.readFileSync('local/file/b')
+
+const sbx = await Sandbox.create()
+// Upload file A to the sandbox to absolute path '/home/user/my-file-a'
+await sbx.files.write('/home/user/my-file-a', fileA)
+// Upload file B to the sandbox to absolute path '/home/user/my-file-b'
+await sbx.files.write('/home/user/my-file-b', fileB)
+
+from e2b_code_interpreter import Sandbox
+
+sbx = Sandbox()
+
+# Read local file relative to the current working directory
+with open("local/file/a", "rb") as file:
+   # Upload file to the sandbox to absolute path '/home/user/my-file-a'
+	sbx.files.write("/home/user/my-file-a", file)
+
+with open("local/file/b", "rb") as file:
+   # Upload file to the sandbox to absolute path '/home/user/my-file-b'
+	sbx.files.write("/home/user/my-file-b", file)
+
+import { Sandbox } from '@e2b/code-interpreter'
+
+const sbx = await Sandbox.create()
+// Download file from the sandbox to absolute path '/home/user/my-file'
+const content = await sbx.files.read('/home/user/my-file')
+// Write file to local path relative to the current working directory
+fs.writeFileSync('local/file', content)
+
+from e2b_code_interpreter import Sandbox
+
+sbx = Sandbox()
+# Download file from the sandbox to absolute path '/home/user/my-file'
+content = sbx.files.read('/home/user/my-file')
+# Write file to local path relative to the current working directory
+with open('local/file', 'w') as file:
+    file.write(content)
+
+import { Sandbox } from '@e2b/code-interpreter'
+
+const sbx = await Sandbox.create()
+// Download file A from the sandbox by absolute path '/home/user/my-file-a'
+const contentA = await sbx.files.read('/home/user/my-file-a')
+// Write file A to local path relative to the current working directory
+fs.writeFileSync('local/file/a', contentA)
+
+// Download file B from the sandbox by absolute path '/home/user/my-file-b'
+const contentB = await sbx.files.read('/home/user/my-file-b')
+// Write file B to local path relative to the current working directory
+fs.writeFileSync('local/file/b', contentB)
+
+from e2b_code_interpreter import Sandbox
+
+sbx = Sandbox()
+# Download file A from the sandbox by absolute path '/home/user/my-file-a'
+contentA = sbx.files.read('/home/user/my-file-a')
+# Write file A to local path relative to the current working directory
+with open('local/file/a', 'w') as file:
+    file.write(contentA)
+
+# Download file B from the sandbox by absolute path '/home/user/my-file-b'
+contentB = sbx.files.read('/home/user/my-file-b')
+# Write file B to local path relative to the current working directory
+with open('local/file/b', 'w') as file:
+    file.write(contentB)
+
