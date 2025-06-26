@@ -1,0 +1,76 @@
+from smolagents import InferenceClientModel, CodeAgent
+
+agent = CodeAgent(tools=[], model=InferenceClientModel(), verbosity_level=0)
+
+result = agent.run("What's the 20th Fibonacci number?")
+agent.replay()
+from smolagents import ActionStep
+
+system_prompt_step = agent.memory.system_prompt
+print("The system prompt given to the agent was:")
+print(system_prompt_step.system_prompt)
+
+task_step = agent.memory.steps[0]
+print("\n\nThe first task step was:")
+print(task_step.task)
+
+for step in agent.memory.steps:
+    if isinstance(step, ActionStep):
+        if step.error is not None:
+            print(f"\nStep {step.step_number} got this error:\n{step.error}\n")
+        else:
+            print(f"\nStep {step.step_number} got these observations:\n{step.observations}\n")
+import helium
+from PIL import Image
+from io import BytesIO
+from time import sleep
+
+def update_screenshot(memory_step: ActionStep, agent: CodeAgent) -> None:
+    sleep(1.0)  # Let JavaScript animations happen before taking the screenshot
+    driver = helium.get_driver()
+    latest_step = memory_step.step_number
+    for previous_memory_step in agent.memory.steps:  # Remove previous screenshots from logs for lean processing
+        if isinstance(previous_memory_step, ActionStep) and previous_memory_step.step_number <= latest_step - 2:
+            previous_memory_step.observations_images = None
+    png_bytes = driver.get_screenshot_as_png()
+    image = Image.open(BytesIO(png_bytes))
+    memory_step.observations_images = [image.copy()]
+CodeAgent(
+    tools=[WebSearchTool(), go_back, close_popups, search_item_ctrl_f],
+    model=model,
+    additional_authorized_imports=["helium"],
+    step_callbacks=[update_screenshot],
+    max_steps=20,
+    verbosity_level=2,
+)
+from smolagents import InferenceClientModel, CodeAgent, ActionStep, TaskStep
+
+agent = CodeAgent(tools=[], model=InferenceClientModel(), verbosity_level=1)
+agent.python_executor.send_tools({**agent.tools})
+print(agent.memory.system_prompt)
+
+task = "What is the 20th Fibonacci number?"
+
+# You could modify the memory as needed here by inputting the memory of another agent.
+# agent.memory.steps = previous_agent.memory.steps
+
+# Let's start a new task!
+agent.memory.steps.append(TaskStep(task=task, task_images=[]))
+
+final_answer = None
+step_number = 1
+while final_answer is None and step_number <= 10:
+    memory_step = ActionStep(
+        step_number=step_number,
+        observations_images=[],
+    )
+    # Run one step.
+    final_answer = agent.step(memory_step)
+    agent.memory.steps.append(memory_step)
+    step_number += 1
+
+    # Change the memory as you please!
+    # For instance to update the latest step:
+    # agent.memory.steps[-1] = ...
+
+print("The final answer is:", final_answer)
