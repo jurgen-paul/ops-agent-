@@ -1,0 +1,20 @@
+const stripe = require('stripe')('pk_live_51N6VqfKhtgX1QVUWfWSuOwdymCk1O7uakaGlwSktqZWBtVbFTjziPmT19xRDfbiHTkMKHwtpeKOSWHnQqAz0fccf0071hPdRdp'); // Your Stripe secret key
+
+async function createSubscription(customerId, priceId) {
+  try {
+    const subscription = await stripe.subscriptions.create({
+      customer: customerId,
+      items: [{ price: priceId }],
+      metadata: { organization_id: 'org_6RsNhnGbSQ3s7rFPAoYfQjA' },
+    });
+    console.log('Subscription created:', subscription.id);
+  } catch (error) {
+    console.error('Error creating subscription:', error);
+  }
+}
+
+// Example usage
+const customerId = 'cus_xxxxxxxxxxxxx'; // Replace with your customer ID
+const priceId = 'price_xxxxxxxxxxxxx'; // Replace with your price ID
+
+createSubscription(customerId, priceId);
